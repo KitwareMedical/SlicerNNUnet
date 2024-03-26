@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SlicerNNUnet</class>
+ <widget class="qMRMLWidget" name="SlicerNNUnet">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>325</width>
+    <height>987</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="ctkCollapsibleButton" name="nnUNetInstallCollapsibleButton">
+     <property name="text">
+      <string>nnUNet Install</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
+     <layout class="QFormLayout" name="formLayout_2">
+      <item row="0" column="0">
+       <widget class="QLabel" name="currentVersionTitleLabel">
+        <property name="text">
+         <string>Current:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="currentVersionLabel">
+        <property name="toolTip">
+         <string>Currently installed nnUNet version. None indicates no version is currently installed.</string>
+        </property>
+        <property name="text">
+         <string>None</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="toInstallTitleLabel">
+        <property name="text">
+         <string>To install:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="toInstallLineEdit">
+        <property name="toolTip">
+         <string>nnUNet version to install. If left empty, will install the latest stable version available.</string>
+        </property>
+        <property name="placeholderText">
+         <string>&gt;=2.0.0</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QPushButton" name="installButton">
+        <property name="toolTip">
+         <string>Install the selected nnUNet version.</string>
+        </property>
+        <property name="text">
+         <string>Install</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="nnUNetSettingsCollapsibleButton">
+     <property name="text">
+      <string>nnUNet Run Settings</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
+     <layout class="QFormLayout" name="formLayout_3">
+      <item row="0" column="0">
+       <widget class="QLabel" name="modelPathTitleLabel">
+        <property name="text">
+         <string>Model path:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="ctkPathLineEdit" name="nnUNetModelPathEdit">
+        <property name="toolTip">
+         <string>Folder path to the nnUNet trained model. Folder should contain one dataset.json file and trained nnUNet folds folders.</string>
+        </property>
+        <property name="filters">
+         <set>ctkPathLineEdit::Dirs|ctkPathLineEdit::Drives|ctkPathLineEdit::Executable|ctkPathLineEdit::NoDot|ctkPathLineEdit::Readable</set>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>parameter.modelPath</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="deviceLabel">
+        <property name="text">
+         <string>Device:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="stepSizeLabel">
+        <property name="text">
+         <string>Step size:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="ctkSliderWidget" name="stepSizeSlider">
+        <property name="toolTip">
+         <string>Overlap between each nnUNet sliding windows.</string>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.500000000000000</double>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>parameter.stepSize</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="deviceComboBox">
+        <property name="toolTip">
+         <string>Inference device.</string>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>parameter.device</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>cuda</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>cpu</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>mps</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QSpinBox" name="nProcessPreprocessingSpinBox">
+        <property name="toolTip">
+         <string>Number of pre processing processes to use. More process will increase RAM usage and may encounter out of memory errors.</string>
+        </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>parameter.nProcessPreprocessing</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="nPreprocessingLabel">
+        <property name="text">
+         <string>NPP:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QSpinBox" name="nProcessSegmentationExportSpinBox">
+        <property name="toolTip">
+         <string>Number of post processing processes to use. More process will increase RAM usage and may encounter out of memory errors.</string>
+        </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>999</number>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>parameter.nProcessSegmentationExport</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="nPostProcessingLabel">
+        <property name="text">
+         <string>NPS:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QCheckBox" name="disableTtaCheckBox">
+        <property name="toolTip">
+         <string>Disable test time augmentation. Test time augmentation will generate mirrors of the input volume for inferrence and combine inferences on augmented volumes. TTA significantly increases inference time.</string>
+        </property>
+        <property name="text">
+         <string>Disable TTA</string>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>parameter.disableTta</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="checkPointNameLabel">
+        <property name="text">
+         <string>Checkpoint name:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="foldsLabel">
+        <property name="text">
+         <string>Folds:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QLineEdit" name="foldsLineEdit">
+        <property name="toolTip">
+         <string>Folds folder to use during inference. More folds will increase inference time. If left empty, will use only fold_0 .</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>0,1,2,3,4</string>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>parameter.folds</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="checkPointNameLineEdit">
+        <property name="toolTip">
+         <string>Name of the model checkpoint file. Leave empty to use default.</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>checkpoint_final.pth</string>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>parameter.checkPointName</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="formLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="inputVolumeLabel">
+       <property name="text">
+        <string>Input volume:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="qMRMLNodeComboBox" name="inputSelector">
+       <property name="toolTip">
+        <string>Pick input volume on which to run the nnUNet inference.</string>
+       </property>
+       <property name="nodeTypes">
+        <stringlist notr="true">
+         <string>vtkMRMLScalarVolumeNode</string>
+        </stringlist>
+       </property>
+       <property name="showChildNodeTypes">
+        <bool>false</bool>
+       </property>
+       <property name="addEnabled">
+        <bool>false</bool>
+       </property>
+       <property name="removeEnabled">
+        <bool>false</bool>
+       </property>
+       <property name="SlicerParameterName" stdset="0">
+        <string>inputVolume</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QPushButton" name="applyButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>Run nnUNet segmentation on selected volume.</string>
+     </property>
+     <property name="text">
+      <string>Apply</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="stopButton">
+     <property name="toolTip">
+      <string>Stop the segmentation.</string>
+     </property>
+     <property name="text">
+      <string>Stop</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTextEdit" name="logTextEdit">
+     <property name="lineWrapMode">
+      <enum>QTextEdit::NoWrap</enum>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ctkCollapsibleButton</class>
+   <extends>QWidget</extends>
+   <header>ctkCollapsibleButton.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkPathLineEdit</class>
+   <extends>QWidget</extends>
+   <header>ctkPathLineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ctkSliderWidget</class>
+   <extends>QWidget</extends>
+   <header>ctkSliderWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLNodeComboBox</class>
+   <extends>QWidget</extends>
+   <header>qMRMLNodeComboBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLWidget</class>
+   <extends>QWidget</extends>
+   <header>qMRMLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>SlicerNNUnet</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>inputSelector</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>122</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>248</x>
+     <y>61</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

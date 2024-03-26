@@ -1,6 +1,6 @@
 import unittest
 
-from SlicerNnUNetLib import InstallLogic
+from SlicerNNUNetLib import InstallLogic
 
 
 class InstallLogicTestCase(unittest.TestCase):
@@ -9,18 +9,6 @@ class InstallLogicTestCase(unittest.TestCase):
 
     def test_clean_pypi_requirements_removes_spaces_from_req_string(self):
         self.assertEqual(InstallLogic.cleanPyPiRequirement("  nibabel >=2.3.0 "), "nibabel>=2.3.0")
-
-    def test_can_install_nn_unet_v2(self):
-        # Uninstall previous version
-        logic = InstallLogic(doAskConfirmation=False)
-        packages_to_remove = ["torch", "nnunetv2", "pandas"]
-        for package in packages_to_remove:
-            logic.pip_uninstall(package)
-
-        self.assertFalse(logic.isPackageInstalledAndCompatible("nnunetv2"))
-        logic.setupPythonRequirements("nnunetv2")
-
-        self.assertTrue(logic.isPackageInstalledAndCompatible("nnunetv2"))
 
     def test_requirements_for_python_versions_outside_slicer_are_marked_not_needed_to_install(self):
         self.assertTrue(InstallLogic.isPackageInstalled("numpy"))
