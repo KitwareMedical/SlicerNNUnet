@@ -5,6 +5,7 @@
 ## Table of contents
 
 * [Introduction](#introduction)
+* [Acknowledgments](#acknowledgments)
 * [Using the extension](#using-the-extension)
 * [Changelog](#changelog)
 * [Contributing](#contributing)
@@ -18,6 +19,24 @@
 This module allows to install and run nnUNet trained models in 3D Slicer with only the training folder.
 
 It streamlines development and integration of new nnUNet models into the 3D Slicer environment.
+
+## Acknowledgments
+
+This module was originally co-financed by the 
+<a href="https://orthodontie-ffo.org/">Fédération Française d\'Orthodontie</a> (FFO) as part of the 
+<a href="https://github.com/gaudot/SlicerDentalSegmentator/">Dental Segmentator</a> 
+developments and the <a href="https://rhu-cosy.com/en/accueil-english/">Cure Overgrowth Syndromes</a> 
+(COSY) RHU Project.
+
+The installation steps are based on the work done in the 
+<a href="https://github.com/lassoan/SlicerTotalSegmentator/">Slicer Total Segmentator extension</a>.
+
+This extension interfaces 3D Slicer with the 
+<a href="https://github.com/MIC-DKFZ/nnUNet">nnUNet library</a>.
+
+Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). nnU-Net: a self-configuring 
+method for deep learning-based biomedical image segmentation. Nature methods, 18(2), 203-211.
+
 
 ## Using the extension
 

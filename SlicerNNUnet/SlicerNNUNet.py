@@ -21,7 +21,9 @@ class SlicerNNUNet(ScriptedLoadableModule):
         self.parent.acknowledgementText = _(
             "This module was originally co-financed by the "
             '<a href="https://orthodontie-ffo.org/">Fédération Française d\'Orthodontie</a> '
-            "(FFO) as part of the Dental Segmentator developments and the "
+            "(FFO) as part of the "
+            '<a href="https://github.com/gaudot/SlicerDentalSegmentator/">Dental Segmentator</a>'
+            " developments and the "
             '<a href="https://rhu-cosy.com/en/accueil-english/">Cure Overgrowth Syndromes</a>'
             " (COSY) RHU Project."
         )
