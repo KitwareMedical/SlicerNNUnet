@@ -39,3 +39,7 @@ class IntegrationTestCase(NNUNetTestCase):
         widget.ui.installButton.click()
 
         self.assertTrue(widget.installLogic.isPackageInstalledAndCompatible("nnunetv2"))
+
+        # Check nnUNetV2 doesn't have torch as listed requirement
+        with open(widget.installLogic.packageMetaFilePath("nnunetv2"), "r") as f:
+            self.assertFalse("Requires-Dist: torch" in f.read())

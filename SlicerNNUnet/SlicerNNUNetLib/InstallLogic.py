@@ -297,6 +297,10 @@ class InstallLogic:
         if not requirements:
             return []
 
+        # Update meta file to remove packages to skip.
+        # Necessary to avoid having skipped dependencies installed into 3D Slicer during pip updates.
+        self._removeSkippedPackagesFromMetaDataFile(packageToInstall, packagesToSkip)
+
         skippedRequirements = []
         for requirement in requirements:
             skipThisPackage = False
@@ -313,6 +317,27 @@ class InstallLogic:
                 self.pipInstallSelective(Requirement(requirement).name, requirement, packagesToSkip)
 
         return skippedRequirements
+
+    @classmethod
+    def _removeSkippedPackagesFromMetaDataFile(cls, packageToInstall, packagesToSkip):
+        def doSkipLine(metaLine):
+            if not metaLine.startswith("Requires-Dist: "):
+                return False
+            for packageToSkip in packagesToSkip:
+                if packageToSkip in metaLine:
+                    return True
+            return False
+
+        with open(cls.packageMetaFilePath(packageToInstall), "r+") as file:
+            filteredLines = "".join([line for line in file if not doSkipLine(line)])
+            file.seek(0)
+            file.write(filteredLines)
+            file.truncate()
+
+    @staticmethod
+    def packageMetaFilePath(packageToInstall):
+        import importlib.metadata
+        return [p for p in importlib.metadata.files(packageToInstall) if 'METADATA' in str(p)][0].locate()
 
     @staticmethod
     def cleanPyPiRequirement(requirement) -> str:

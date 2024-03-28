@@ -63,6 +63,10 @@ Note that the extension may require a 3D Slicer restart before running the infer
 Once the nnUNet is correctly installed, click on the 'nnUNet Run Settings' button to set the path to the Model to use.
 This path will be saved for further usage after the first segmentation.
 
+*Note* : To test this extension, you can download the 
+<a href="https://github.com/gaudot/SlicerDentalSegmentator/releases">Dental Segmentator NNUNet weights</a> 
+and use the `CBCTDentalSurgery` Sample.
+
 <img src="https://github.com/KitwareMedical/SlicerNNUnet/raw/main/Screenshots/4.png"/>
 
 Select the volume on which to run the model using the volume input editor.

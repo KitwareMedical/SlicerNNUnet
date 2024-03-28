@@ -14,7 +14,7 @@ It allows for quick and relable nnUNet dependency installation in 3D Slicer envi
 The installation steps are based on the work done in the SlicerTotalSegmentator exension (https://github.com/lassoan/SlicerTotalSegmentator)")
 set(EXTENSION_ICONURL "https://github.com/KitwareMedical/SlicerNNUnet/raw/main/SlicerNNUnet/Resources/Icons/SlicerNNUnet.png")
 set(EXTENSION_SCREENSHOTURLS "https://github.com/KitwareMedical/SlicerNNUnet/raw/main/Screenshots/1.png")
-set(EXTENSION_DEPENDS "PyTorch,SlicerPythonTestRunner") # Specified as a list or "NA" if no dependencies
+set(EXTENSION_DEPENDS "PyTorch SlicerPythonTestRunner") # Specified as a list or "NA" if no dependencies
 
 #-----------------------------------------------------------------------------
 # Extension dependencies

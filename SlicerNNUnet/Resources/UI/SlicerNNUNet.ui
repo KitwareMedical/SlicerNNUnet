@@ -173,7 +173,8 @@
       <item row="5" column="0">
        <widget class="QLabel" name="nPreprocessingLabel">
         <property name="text">
-         <string>NPP:</string>
+         <string>N Pre-Processing
+processes (NPP):</string>
         </property>
        </widget>
       </item>
@@ -196,20 +197,8 @@
       <item row="6" column="0">
        <widget class="QLabel" name="nPostProcessingLabel">
         <property name="text">
-         <string>NPS:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
-       <widget class="QCheckBox" name="disableTtaCheckBox">
-        <property name="toolTip">
-         <string>Disable test time augmentation. Test time augmentation will generate mirrors of the input volume for inferrence and combine inferences on augmented volumes. TTA significantly increases inference time.</string>
-        </property>
-        <property name="text">
-         <string>Disable TTA</string>
-        </property>
-        <property name="SlicerParameterName" stdset="0">
-         <string>parameter.disableTta</string>
+         <string>N Post-processing
+processes (NPS):</string>
         </property>
        </widget>
       </item>
@@ -256,6 +245,27 @@
         </property>
         <property name="SlicerParameterName" stdset="0">
          <string>parameter.checkPointName</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QCheckBox" name="disableTtaCheckBox">
+        <property name="toolTip">
+         <string>Disable test time augmentation. Test time augmentation will generate mirrors of the input volume for inferrence and combine inferences on augmented volumes. TTA significantly increases inference time.</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>parameter.disableTta</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Disable test-time
+augmentation (TTA):</string>
         </property>
        </widget>
       </item>
