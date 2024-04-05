@@ -1,3 +1,4 @@
+import slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.i18n import tr as _, translate
 
@@ -44,22 +45,13 @@ class SlicerNNUNetWidget(ScriptedLoadableModuleWidget):
 
 
 class SlicerNNUNetTest(ScriptedLoadableModuleTest):
-    """
-    Runs every test except for integration test cases.
-    """
-
-    def printAndDisplay(self, msg, isWarning):
-        import logging
-        print(msg) if not isWarning else logging.warning(msg)
-        self.delayDisplay(msg)
-
     def runTest(self):
         from pathlib import Path
 
         try:
             from SlicerPythonTestRunnerLib import RunnerLogic, RunSettings
         except ImportError:
-            self.printAndDisplay("SlicerPythonTestRunner not found. Test skipped.", isWarning=True)
+            slicer.util.warningDisplay("Please install SlicerPythonTestRunner extension to run the self tests.")
             return
 
         currentDirTest = Path(__file__).parent.joinpath("Testing")
@@ -69,6 +61,6 @@ class SlicerNNUNetTest(ScriptedLoadableModuleTest):
         )
 
         if results.failuresNumber:
-            self.printAndDisplay(f"Tests failed.\n{results.getFailingCasesString()}", isWarning=True)
+            raise AssertionError(f"Test failed: \n{results.getFailingCasesString()}")
         else:
-            self.printAndDisplay(f"Tests OK. {results.getSummaryString()}", isWarning=False)
+            slicer.util.delayDisplay(f"Tests OK. {results.getSummaryString()}")
