@@ -121,10 +121,19 @@ class SegmentationLogic:
 
     def startSegmentation(self, volumeNode: "slicer.vtkMRMLScalarVolumeNode") -> None:
         """Run the segmentation on a slicer volumeNode, get the result as a segmentationNode"""
+        # Check the nnUNet parameters are correct
+        try:
+            self._getNNUNetParamArgsOrRaise()
+        except RuntimeError as e:
+            self.errorOccurred(e)
+            return
+
+        # Prepare the inference directory
         if not self._prepareInferenceDir(volumeNode):
             self.errorOccurred(f"Failed to export volume node to {self.nnUNetInDir}")
             return
 
+        # Launch the nnUNet processing
         self._startInferenceProcess()
 
     def stopSegmentation(self):
@@ -182,8 +191,9 @@ class SegmentationLogic:
             self.errorOccurred("Failed to find nnUNet predict path.")
             return
 
+        # Get the nnUNet parameters as arg list
         try:
-            args = self._nnUNetParam.asArgList(self.nnUNetInDir, self.nnUNetOutDir)
+            args = self._getNNUNetParamArgsOrRaise()
         except RuntimeError as e:
             self.errorOccurred(e)
             return
@@ -205,6 +215,9 @@ class SegmentationLogic:
         )
         self.progressInfo("nnUNet preprocessing...\n")
         self.inferenceProcess.start(nnUnetPredictPath, args, qt.QProcess.Unbuffered | qt.QProcess.ReadOnly)
+
+    def _getNNUNetParamArgsOrRaise(self):
+        return self._nnUNetParam.asArgList(self.nnUNetInDir, self.nnUNetOutDir)
 
     @property
     def _outFile(self) -> str:

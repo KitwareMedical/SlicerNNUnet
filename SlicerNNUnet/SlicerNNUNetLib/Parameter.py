@@ -107,7 +107,7 @@ class Parameter:
         False and reason for failure otherwise.
         """
         if not self._isDatasetPathValid():
-            return False, f"Dataset.json file is missing. Provided model dir :\n{self.modelPath}"
+            return False, f"dataset.json file is missing.\nProvided model dir :\n{self.modelPath}"
 
         # Check input configuration folds matches the input model folder
         missing_folds = self._getMissingFolds()
@@ -141,22 +141,33 @@ class Parameter:
             return [(f"Segment_{v}", k) for k, v in labels.items()]
 
     @property
-    def _datasetPath(self):
+    def _datasetPath(self) -> Optional[Path]:
+        path = self._getFirstFolderWithDatasetFile(self.modelPath)
+        if path is not None:
+            return path
+
+        isProvidedPathFoldDir = list(self.modelPath.glob(self._getCheckpointName()))
+        if isProvidedPathFoldDir:
+            return self._getFirstFolderWithDatasetFile(self.modelPath.parent)
+        return None
+
+    @staticmethod
+    def _getFirstFolderWithDatasetFile(path: Path) -> Optional[Path]:
         try:
-            return next(self.modelPath.rglob("dataset.json")) if self.modelPath else None
+            return next(path.rglob("dataset.json")) if path else None
         except StopIteration:
             return None
 
-    def _foldsAsList(self):
+    def _foldsAsList(self) -> List[int]:
         return [int(f) for f in self.folds.strip().split(",")] if self.folds else [0]
 
     def _getFoldPaths(self) -> List[Tuple[int, Path]]:
         return [(fold, self._configurationFolder.joinpath(f"fold_{fold}")) for fold in self._foldsAsList()]
 
-    def _getMissingFolds(self):
+    def _getMissingFolds(self) -> List[int]:
         return [fold for fold, path in self._getFoldPaths() if not path.exists()]
 
-    def _getFoldsWithInvalidWeights(self):
+    def _getFoldsWithInvalidWeights(self) -> List[int]:
         return [fold for fold, path in self._getFoldPaths() if not path.joinpath(self._getCheckpointName()).exists()]
 
     @property
