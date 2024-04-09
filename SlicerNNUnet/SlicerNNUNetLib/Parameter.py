@@ -29,6 +29,12 @@ class Parameter:
     def asDict(self) -> Dict:
         return asdict(self)
 
+    def asJSon(self, indent=None):
+        return json.dumps(self.asDict(), cls=_PathEncoder, indent=indent)
+
+    def debugString(self):
+        return self.asJSon(indent=4)
+
     def asArgList(self, inDir: Path, outDir: Path) -> List:
         import torch
 
@@ -64,7 +70,7 @@ class Parameter:
         """
         key = key or self._defaultSettingsKey()
         settings = settings or qt.QSettings()
-        settings.setValue(key, json.dumps(self.asDict(), cls=_PathEncoder))
+        settings.setValue(key, self.asJSon())
         settings.sync()
 
     @classmethod

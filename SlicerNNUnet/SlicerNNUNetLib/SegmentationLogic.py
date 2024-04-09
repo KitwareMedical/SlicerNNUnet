@@ -196,6 +196,13 @@ class SegmentationLogic:
         os.environ['nnUNet_raw'] = self._nnUNetParam.modelFolder.as_posix()
         os.environ['nnUNet_results'] = self._nnUNetParam.modelFolder.as_posix()
 
+        argListStr = ' '.join(str(a) for a in args)
+        self.progressInfo(
+            "Starting nnUNet with the following parameters:\n"
+            f"\n{nnUnetPredictPath} {argListStr}\n\n"
+            "JSON parameters :\n"
+            f"{self._nnUNetParam.debugString()}\n"
+        )
         self.progressInfo("nnUNet preprocessing...\n")
         self.inferenceProcess.start(nnUnetPredictPath, args, qt.QProcess.Unbuffered | qt.QProcess.ReadOnly)
 

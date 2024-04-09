@@ -65,13 +65,19 @@ class InstallLogic:
         """
         try:
             if self.isPackageInstalledAndCompatible(nnUNetRequirements):
-                self._log("nnUNet is already installed and compatible with requested version.")
+                self._log(
+                    f"nnUNet is already installed ({self.getInstalledNNUnetVersion()}) "
+                    f"and compatible with requested version ({nnUNetRequirements})."
+                )
                 return True
 
             self.installPyTorchExtensionAndRestartIfNeeded()
             if self.needsRestart:
                 self._log("Slicer needs to be restarted before continuing install.")
                 return True
+
+            if self.doAskConfirmation:
+                self._requestPermissionToInstallOrRaise()
 
             self._log(f"Start nnUNet install with requirements : {nnUNetRequirements}")
             self._installPandas()
@@ -174,13 +180,9 @@ class InstallLogic:
         if self.isPackageInstalled(torchRequirements) and self.isInstalledPackageCompatible(torchRequirements):
             return
 
-        if not self.isInstalledPackageCompatible(torchRequirements):
-            if self.doAskConfirmation:
-                self._requestPermissionForTorchInstallOrRaise(torchRequirements)
-
         self._log("PyTorch Python package is required. Installing... (it may take several minutes)")
         if torchLogic.installTorch(
-                askConfirmation=self.doAskConfirmation,
+                askConfirmation=False,
                 torchVersionRequirement=str(torchRequirements.specifier)
         ) is None:
             raise RuntimeError(
@@ -188,30 +190,20 @@ class InstallLogic:
             )
 
     @classmethod
-    def _requestPermissionForTorchInstallOrRaise(cls, torchRequirements: Requirement) -> None:
+    def _requestPermissionToInstallOrRaise(cls) -> None:
         """
-        Request user permission to install PyTorch. Raises RuntimeError if canceled by user.
+        Request user permission to install nnUNet and PyTorch.
         """
-        torchVersion = cls.getInstalledPackageVersion(torchRequirements)
-        reqVersion = torchRequirements.specifier
-
-        msg = (
-            f"PyTorch version {torchVersion} is not compatible with this module."
-            f" Version required is {reqVersion}."
-        )
-
         ret = qt.QMessageBox.question(
             None,
-            "Invalid Torch version detection",
-            msg + " Would you like to upgrade your PyTorch version?"
+            "nnUNet about to be installed",
+            "nnUNet and PyTorch will be installed to 3D Slicer. "
+            "This install can take a few minutes. "
+            "Would you like to proceed?"
         )
 
         if ret == qt.QMessageBox.No:
-            raise RuntimeError(
-                msg +
-                f' You can use "PyTorch Util" module to install PyTorch'
-                f' with version requirement set to: {reqVersion}'
-            )
+            raise RuntimeError("Install process was manually canceled by user.")
 
     def installPyTorchExtensionAndRestartIfNeeded(self):
         """
