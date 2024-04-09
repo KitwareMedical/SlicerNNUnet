@@ -215,6 +215,8 @@ class Widget(qt.QWidget):
             return
 
         self._setApplyVisible(True)
+        if isinstance(errorMsg, Exception):
+            errorMsg = str(errorMsg)
         self._reportError("Encountered error during inference :\n" + errorMsg, doTraceback=False)
 
     def onProgressInfo(self, infoMsg):
