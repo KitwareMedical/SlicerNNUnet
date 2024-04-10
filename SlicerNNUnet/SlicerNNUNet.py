@@ -43,6 +43,26 @@ class SlicerNNUNetWidget(ScriptedLoadableModuleWidget):
         self.logic = widget.logic
         self.layout.addWidget(widget)
 
+    def onReload(self):
+        """
+        Customization of reload to allow reloading of the SlicerNNUNetLib files.
+        """
+        import imp
+
+        packageName = "SlicerNNUNetLib"
+        submoduleNames = ["Signal", "Parameter", "InstallLogic", "SegmentationLogic", "Widget"]
+        f, filename, description = imp.find_module(packageName)
+        package = imp.load_module(packageName, f, filename, description)
+        for submoduleName in submoduleNames:
+            print(f"Reloading {packageName}.{submoduleName}")
+            f, filename, description = imp.find_module(submoduleName, package.__path__)
+            try:
+                imp.load_module(packageName + '.' + submoduleName, f, filename, description)
+            finally:
+                f.close()
+
+        ScriptedLoadableModuleWidget.onReload(self)
+
 
 class SlicerNNUNetTest(ScriptedLoadableModuleTest):
     def runTest(self):
