@@ -106,27 +106,57 @@ class Parameter:
         Returns True and empty string if that's the case.
         False and reason for failure otherwise.
         """
+        exp_struct_msg = (
+            "Your model weight folder path should look like the following :\n"
+            "Dataset<dataset_id>/<trainer_name>__<plan_name>__<conf_name>\n\n"
+            "It should also contain a dataset.json file and fold_<i_fold> folders with model weights.\n\n"
+            f"Provided model dir :\n{self.modelPath}"
+        )
+
         if not self._isDatasetPathValid():
-            return False, f"dataset.json file is missing.\nProvided model dir :\n{self.modelPath}"
+            return False, f"dataset.json file is missing.\n{exp_struct_msg}"
 
         # Check input configuration folds matches the input model folder
         missing_folds = self._getMissingFolds()
         if missing_folds:
-            return False, f"Model folder is missing the following folds : {missing_folds}."
+            return False, f"Model folder is missing the following folds : {missing_folds}.\n{exp_struct_msg}"
 
         # Check folds with invalid weights
         folds_with_invalid_weights = self._getFoldsWithInvalidWeights()
         if folds_with_invalid_weights:
-            return False, f"Following model folds don't contain {self.checkPointName} weights : {folds_with_invalid_weights}."
+            return (
+                False,
+                f"Following model folds don't contain {self._getCheckpointName()} weights : "
+                f"{folds_with_invalid_weights}.\n{exp_struct_msg}"
+            )
+
+        # Check configuration folder name is valid
 
         if not len(self._configurationNameParts) == 3:
             return (
                 False,
-                "Invalid nnUNet configuration folder."
-                "  Expected folder name such as <trainer_name>__<plan_name>__<conf_name>"
+                f"Invalid nnUNet configuration folder : {self._configurationFolder.name}\n{exp_struct_msg}"
+            )
+
+        # Check dataset folder name is valid
+        if not self._isDatasetNameValid():
+            return (
+                False,
+                f"Invalid Dataset folder name : {self._datasetName}\n{exp_struct_msg}"
             )
 
         return True, ""
+
+    @staticmethod
+    def _isConvertibleToInt(dataSetFolderName):
+        try:
+            int(dataSetFolderName)
+            return True
+        except ValueError:
+            return False
+
+    def _isDatasetNameValid(self):
+        return self._datasetName.startswith("Dataset") or self._isConvertibleToInt(self._datasetName)
 
     def readSegmentIdsAndLabelsFromDatasetFile(self) -> Optional[List[Tuple[str, str]]]:
         """
@@ -135,13 +165,13 @@ class Parameter:
         if not self._isDatasetPathValid():
             return None
 
-        with open(self._datasetPath, "r") as f:
+        with open(self._datasetFilePath, "r") as f:
             dataset_dict = json.loads(f.read())
             labels = dataset_dict.get("labels")
             return [(f"Segment_{v}", k) for k, v in labels.items()]
 
     @property
-    def _datasetPath(self) -> Optional[Path]:
+    def _datasetFilePath(self) -> Optional[Path]:
         path = self._getFirstFolderWithDatasetFile(self.modelPath)
         if path is not None:
             return path
@@ -172,7 +202,7 @@ class Parameter:
 
     @property
     def _configurationFolder(self) -> Path:
-        return self._datasetPath.parent
+        return self._datasetFilePath.parent
 
     @property
     def _datasetFolder(self) -> Path:
@@ -191,7 +221,7 @@ class Parameter:
         return self._configurationFolder.name.split("__")
 
     def _isDatasetPathValid(self) -> bool:
-        return self._datasetPath is not None
+        return self._datasetFilePath is not None
 
 
 class _PathEncoder(json.JSONEncoder):

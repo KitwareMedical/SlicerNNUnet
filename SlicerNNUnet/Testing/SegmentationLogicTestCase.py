@@ -1,13 +1,14 @@
 import json
+import os
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import qt
 import slicer
 
 from SlicerNNUNetLib import SegmentationLogic, Signal
 from SlicerNNUNetLib.Parameter import Parameter
 from .Utils import NNUNetTestCase, load_test_CT_volume
-import qt
 
 
 class MockProcess:
@@ -129,6 +130,17 @@ class SegmentationLogicTestCase(NNUNetTestCase):
     def test_informs_error_occurred_if_fold_is_outside_created_ones(self):
         self.create_fake_model_dir()
         self.logic.setParameter(Parameter(modelPath=self.get_tmp_dataset_folder(), folds="5"))
+        self.logic.startSegmentation(self.volume)
+
+        self.mockError.assert_called_once()
+        self.process.start.assert_not_called()
+
+    def test_informs_error_occurred_if_dataset_name_doesnt_start_with_dataset(self):
+        self.create_fake_model_dir()
+        model_path = os.path.join(self._tmp_dir.path(), "StringWithoutDatasetPrefix")
+        os.rename(os.path.join(self._tmp_dir.path(), "Dataset111_453CT"), model_path)
+
+        self.logic.setParameter(Parameter(modelPath=Path(model_path)))
         self.logic.startSegmentation(self.volume)
 
         self.mockError.assert_called_once()

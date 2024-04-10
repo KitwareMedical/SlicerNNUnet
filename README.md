@@ -8,6 +8,7 @@
 * [Acknowledgments](#acknowledgments)
 * [Using the extension](#using-the-extension)
 * [Changelog](#changelog)
+* [Expected Weight Folder Structure](#expected-weight-folder-structure)
 * [Contributing](#contributing)
 
 ## Introduction
@@ -63,9 +64,17 @@ Note that the extension may require a 3D Slicer restart before running the infer
 Once the nnUNet is correctly installed, click on the 'nnUNet Run Settings' button to set the path to the Model to use.
 This path will be saved for further usage after the first segmentation.
 
-*Note* : To test this extension, you can download the 
-<a href="https://github.com/gaudot/SlicerDentalSegmentator/releases">Dental Segmentator NNUNet weights</a> 
-and use the `CBCTDentalSurgery` Sample.
+The provided model path should contain the nnUNet 'dataset.json' file.
+
+> [!NOTE]
+> To test this extension, you can download the 
+> <a href="https://github.com/gaudot/SlicerDentalSegmentator/releases">Dental Segmentator NNUNet weights</a> 
+> and use the `CBCTDentalSurgery` Sample. 
+
+
+> [!WARNING]
+> The model weight folder structure should follow the nnUNet expected weight structure for this module to work
+> (see the [expected weight folder structure](#expected-weight-folder-structure) section)
 
 <img src="https://github.com/KitwareMedical/SlicerNNUnet/raw/main/Screenshots/4.png"/>
 
@@ -79,6 +88,24 @@ Once the model has finished running, the segmentation will be loaded into 3D Sli
 It can then be viewed and edited in the `Segment Editor` module.
 
 <img src="https://github.com/KitwareMedical/SlicerNNUnet/raw/main/Screenshots/1.png"/>
+
+## Expected weight folder structure
+
+To properly run the nnUNet prediction, the nnUNet weight folder structure should be preserved.
+
+nnUNet structure should look like the following : 
+* <dataset_id> : The dataset id should be either a string beginning by Dataset or an integer
+  * <trainer_name>__<plan_name>__<config_name> : default configuration folder name is `nnUNetTrainer__nnUNetPlans__3d_fullres`
+    * fold_<> : Fold folder from 0 to n containing the training weights
+      * <weight_name> : By default the weight name is `checkpoint_final.pth` it can also be modified using the `Parameter` class
+    * dataset.json : Configuration file containing dataset labels
+
+If this structure is not preserved, the inference will raise an error.
+
+The `Parameter` class provides an `isValid` method to check if the provided model structure is valid.
+
+Please read [the official nnUNet documentation](https://github.com/MIC-DKFZ/nnUNet/blob/master/documentation/how_to_use_nnunet.md#3d-u-net-cascade) 
+for more information.
 
 ## Contributing
 
