@@ -23,7 +23,7 @@ include(${Slicer_USE_FILE})
 
 #-----------------------------------------------------------------------------
 # Extension modules
-add_subdirectory(SlicerNNUNet)
+add_subdirectory(SlicerNNUnet)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------

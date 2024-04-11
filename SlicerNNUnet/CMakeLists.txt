@@ -19,7 +19,7 @@ set(MODULE_PYTHON_SCRIPTS
   )
 
 set(MODULE_PYTHON_RESOURCES
-  Resources/Icons/${MODULE_NAME}.png
+  Resources/Icons/SlicerNNUnet.png
   Resources/Icons/start_icon.png
   Resources/Icons/stop_icon.png
   Resources/UI/${MODULE_NAME}.ui
