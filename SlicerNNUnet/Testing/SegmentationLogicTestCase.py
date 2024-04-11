@@ -76,7 +76,7 @@ class SegmentationLogicTestCase(NNUNetTestCase):
         clonedId = slicer.modules.subjecthierarchy.logic().CloneSubjectHierarchyItem(shNode, volumeId)
         clonedVolume = shNode.GetItemDataNode(clonedId)
         array = slicer.util.arrayFromVolume(clonedVolume)
-        array = np.random.randint(0, 6, array.shape)
+        array = np.random.randint(0, 6, array.shape, dtype=np.int32)
         slicer.util.updateVolumeFromArray(clonedVolume, array)
         slicer.util.exportNode(clonedVolume, self.logic.nnUNetOutDir.joinpath("out.nii.gz"))
         slicer.mrmlScene.RemoveNode(clonedVolume)

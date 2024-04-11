@@ -67,11 +67,16 @@ class SlicerNNUNetWidget(ScriptedLoadableModuleWidget):
 class SlicerNNUNetTest(ScriptedLoadableModuleTest):
     def runTest(self):
         from pathlib import Path
+        from SlicerNNUNetLib import InstallLogic
 
         try:
             from SlicerPythonTestRunnerLib import RunnerLogic, RunSettings
         except ImportError:
             slicer.util.warningDisplay("Please install SlicerPythonTestRunner extension to run the self tests.")
+            return
+
+        if InstallLogic().getInstalledNNUnetVersion() is None:
+            slicer.util.warningDisplay("Please install nnUNet to run the self tests of this extension.")
             return
 
         currentDirTest = Path(__file__).parent.joinpath("Testing")

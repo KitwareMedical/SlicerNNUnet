@@ -91,7 +91,7 @@ class InstallLogic:
             self._log(f"Error occurred during install : {e}")
             return False
 
-    def getInstalledNNUnetVersion(self) -> Version:
+    def getInstalledNNUnetVersion(self) -> Optional[Version]:
         return self.getInstalledPackageVersion("nnunetv2")
 
     @classmethod
