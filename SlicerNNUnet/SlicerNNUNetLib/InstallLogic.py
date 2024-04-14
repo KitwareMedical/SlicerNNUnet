@@ -320,7 +320,7 @@ class InstallLogic:
                     return True
             return False
 
-        with open(cls.packageMetaFilePath(packageToInstall), "r+") as file:
+        with open(cls.packageMetaFilePath(packageToInstall), "r+", encoding="utf-8") as file:
             filteredLines = "".join([line for line in file if not doSkipLine(line)])
             file.seek(0)
             file.write(filteredLines)
