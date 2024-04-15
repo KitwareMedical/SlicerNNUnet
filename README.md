@@ -68,8 +68,8 @@ The provided model path should contain the nnUNet 'dataset.json' file.
 
 > [!NOTE]
 > To test this extension, you can download the 
-> <a href="https://github.com/gaudot/SlicerDentalSegmentator/releases">Dental Segmentator NNUNet weights</a> 
-> and use the `CBCTDentalSurgery` Sample. 
+> <a href="https://github.com/wasserth/TotalSegmentator/releases">Total Segmentator NNUNet weights</a> 
+> and use the `CTChest` Sample. 
 
 
 > [!WARNING]
