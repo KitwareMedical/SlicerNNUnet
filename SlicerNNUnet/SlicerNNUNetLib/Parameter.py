@@ -42,7 +42,6 @@ class Parameter:
         if not isValid:
             raise RuntimeError(f"Invalid nnUNet configuration. {reason}")
 
-        device = self.device if torch.cuda.is_available() else "cpu"
         args = [
             "-i", inDir.as_posix(),
             "-o", outDir.as_posix(),
@@ -54,7 +53,7 @@ class Parameter:
             "-npp", self.nProcessPreprocessing,
             "-nps", self.nProcessSegmentationExport,
             "-step_size", self.stepSize,
-            "-device", device,
+            "-device", self._getDevice(),
             "-chk", self._getCheckpointName()
         ]
 
@@ -62,6 +61,17 @@ class Parameter:
             args.append("--disable_tta")
 
         return args
+
+    def _getDevice(self):
+        """
+        Get compatible nnUNet device for current torch and hardware install
+        """
+        import torch
+        if self.device == "cuda" and not torch.cuda.is_available():
+            return "cpu"
+        if self.device == "mps" and not torch.backends.mps.is_available():
+            return "cpu"
+        return self.device
 
     def toSettings(self, settings: Optional[qt.QSettings] = None, key: str = "") -> None:
         """
