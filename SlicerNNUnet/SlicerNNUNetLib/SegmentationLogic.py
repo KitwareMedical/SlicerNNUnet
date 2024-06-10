@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Protocol, List, Optional
+from typing import Protocol, List, Optional, Callable
 
 import qt
 import slicer
@@ -149,7 +149,10 @@ class SegmentationLogic:
             return segmentationNode
         except StopIteration:
             raise RuntimeError(
-                f"Failed to load the segmentation.\nCheck the inference folder content {self.nnUNetOutDir}")
+                "Failed to load the segmentation.\n"
+                "Something went wrong during the nnUNet processing.\n"
+                "Please check the logs for potential errors and contact the library maintainers."
+            )
 
     def _renameSegments(self, segmentationNode: "slicer.vtkMRMLSegmentationNode") -> None:
         """
@@ -280,7 +283,7 @@ class Process:
         self._report(self.process.readAllStandardError(), self.errorOccurred)
 
     @staticmethod
-    def _report(stream, outSignal):
-        info = bytes(stream.data()).decode()
+    def _report(stream: "qt.QByteArray", outSignal: Callable[[str], None]) -> None:
+        info = qt.QTextCodec.codecForUtfText(stream).toUnicode(stream)
         if info:
             outSignal(info)
