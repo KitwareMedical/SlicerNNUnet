@@ -70,7 +70,7 @@ class SlicerNNUNetTest(ScriptedLoadableModuleTest):
         from SlicerNNUNetLib import InstallLogic
 
         try:
-            from SlicerPythonTestRunnerLib import RunnerLogic, RunSettings
+            from SlicerPythonTestRunnerLib import RunnerLogic, RunSettings, isRunningInTestMode
         except ImportError:
             slicer.util.warningDisplay("Please install SlicerPythonTestRunner extension to run the self tests.")
             return
@@ -82,10 +82,11 @@ class SlicerNNUNetTest(ScriptedLoadableModuleTest):
         currentDirTest = Path(__file__).parent.joinpath("Testing")
         results = RunnerLogic().runAndWaitFinished(
             currentDirTest,
-            RunSettings(extraPytestArgs=RunSettings.pytestFileFilterArgs("*TestCase.py") + ["-m not slow"])
+            RunSettings(extraPytestArgs=RunSettings.pytestFileFilterArgs("*TestCase.py") + ["-m not slow"]),
+            doRunInSubProcess=not isRunningInTestMode()
         )
 
         if results.failuresNumber:
             raise AssertionError(f"Test failed: \n{results.getFailingCasesString()}")
-        else:
-            slicer.util.delayDisplay(f"Tests OK. {results.getSummaryString()}")
+
+        slicer.util.delayDisplay(f"Tests OK. {results.getSummaryString()}")
