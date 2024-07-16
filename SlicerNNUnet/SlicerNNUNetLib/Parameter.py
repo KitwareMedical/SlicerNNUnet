@@ -62,14 +62,19 @@ class Parameter:
 
         return args
 
+    def isSelectedDeviceAvailable(self) -> bool:
+        import torch
+        if self.device == "cuda" and not torch.cuda.is_available():
+            return False
+        if self.device == "mps" and not torch.backends.mps.is_available():
+            return False
+        return True
+
     def _getDevice(self):
         """
         Get compatible nnUNet device for current torch and hardware install
         """
-        import torch
-        if self.device == "cuda" and not torch.cuda.is_available():
-            return "cpu"
-        if self.device == "mps" and not torch.backends.mps.is_available():
+        if not self.isSelectedDeviceAvailable():
             return "cpu"
         return self.device
 
