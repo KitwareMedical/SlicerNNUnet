@@ -84,6 +84,7 @@ class InstallLogic:
             self._downgradePillowToLessThan10_1()
             torchRequirement = self._installNNUnet(nnUNetRequirements)
             self._installPyTorch(torchRequirement)
+            self._installACVLUtils()  # Since acvl_utils requires pytorch, we need to install acvl_utils after pytorch.
             self._downgradeDynamicNetworkArchitecture()
             self._log("nnUNet installation completed successfully.")
             return True
@@ -145,11 +146,13 @@ class InstallLogic:
         Slicer's SimpleITK uses a special IO class, which should not be replaced.
         Torch requires special install using SlicerPyTorch.
         Requests would require restart which is unnecessary.
+        acvl-utils has problems with 0.2.1 and 0.2.2 versions. Specific install to follow.
         """
         nnUNetPackagesToSkip = [
             'SimpleITK',
             'torch',
             'requests',
+            'acvl-utils',
         ]
 
         # Install nnunetv2 with selected dependencies only
@@ -172,6 +175,27 @@ class InstallLogic:
             self._log(
                 f'dynamic_network_architectures package version is incompatible. Installing working version...')
             self.pip_install("dynamic_network_architectures==0.2.0")
+
+    def _installACVLUtils(self) -> None:
+        """
+        Workaround: fix incompatibility of acvl-utils 0.2.1 and 0.2.2 with nnunetv2.
+        Revert to the last working version: acvl-utils==0.2.0
+        """
+        # Recent versions of acvl_utils are broken:
+        # 0.2.1: https://github.com/MIC-DKFZ/acvl_utils/issues/2
+        # 0.2.2: https://github.com/MIC-DKFZ/acvl_utils/issues/4
+        # As a workaround, we install an older version manually. This workaround can be removed after acvl_utils is fixed.
+        needToInstallAcvlUtils = True
+        try:
+            if parse(importlib.metadata.version("acvl_utils")) == parse("0.2"):
+                # A suitable version is already installed
+                needToInstallAcvlUtils = False
+        except Exception as e:
+            pass
+        if needToInstallAcvlUtils:
+            self._log(
+                f'Installing a working acvl-utils package version...')
+            slicer.util.pip_install("acvl_utils==0.2")
 
     def _installPyTorch(self, torchRequirements: str) -> None:
         torchLogic = self._getTorchLogic()
