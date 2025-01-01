@@ -80,7 +80,6 @@ class InstallLogic:
                 self._requestPermissionToInstallOrRaise()
 
             self._log(f"Start nnUNet install with requirements : {nnUNetRequirements}")
-            self._installPandas()
             torchRequirement = self._installNNUnet(nnUNetRequirements)
             self._installPyTorch(torchRequirement)
             self._installACVLUtils()  # Since acvl_utils requires pytorch, we need to install acvl_utils after pytorch.
@@ -279,15 +278,6 @@ class InstallLogic:
                 "This module requires PyTorch extension. "
                 "Install it from the Extensions Manager and restart Slicer to continue."
             )
-
-    def _installPandas(self) -> None:
-        """
-        Installs pandas if necessary.
-        """
-        try:
-            import pandas
-        except ModuleNotFoundError:
-            self.pip_install("pandas")
 
     def pipInstallSelective(self, packageToInstall, installCommand, packagesToSkip):
         """
