@@ -81,7 +81,6 @@ class InstallLogic:
 
             self._log(f"Start nnUNet install with requirements : {nnUNetRequirements}")
             self._installPandas()
-            self._downgradePillowToLessThan10_1()
             torchRequirement = self._installNNUnet(nnUNetRequirements)
             self._installPyTorch(torchRequirement)
             self._installACVLUtils()  # Since acvl_utils requires pytorch, we need to install acvl_utils after pytorch.
@@ -280,16 +279,6 @@ class InstallLogic:
                 "This module requires PyTorch extension. "
                 "Install it from the Extensions Manager and restart Slicer to continue."
             )
-
-    def _downgradePillowToLessThan10_1(self) -> None:
-        """
-        Pillow version that is installed in Slicer (10.1.0) is too new,
-        it is incompatible with several nnUNet dependencies.
-        Attempt to uninstall and install an older version before any of the packages import  it.
-        """
-        needToInstallPillow = parse(version("pillow")) >= parse("10.1")
-        if needToInstallPillow:
-            self.pip_install("pillow<10.1")
 
     def _installPandas(self) -> None:
         """
