@@ -320,7 +320,8 @@ class InstallLogic:
                     return True
             return False
 
-        with open(cls.packageMetaFilePath(packageToInstall), "r+", encoding="utf-8") as file:
+        # Use Latin-1 encoding to read the file, as it may contain non-ASCII characters and not necessarily in UTF-8 encoding.
+        with open(cls.packageMetaFilePath(packageToInstall), "r+", encoding="latin1") as file:
             filteredLines = "".join([line for line in file if not doSkipLine(line)])
             file.seek(0)
             file.write(filteredLines)
