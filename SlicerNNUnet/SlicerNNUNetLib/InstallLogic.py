@@ -219,7 +219,7 @@ class InstallLogic:
         ret = qt.QMessageBox.question(
             None,
             "nnUNet about to be installed",
-            "nnUNet and PyTorch will be installed to 3D Slicer. "
+            "nnUNet will be installed to 3D Slicer. "
             "This install can take a few minutes. "
             "Would you like to proceed?"
         )
