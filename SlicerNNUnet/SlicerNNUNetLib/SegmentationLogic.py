@@ -224,7 +224,7 @@ class SegmentationLogic:
 
     @property
     def _outFile(self) -> str:
-        return next(file for file in self.nnUNetOutDir.rglob("*.nii*")).as_posix()
+        return next(file for file in self.nnUNetOutDir.rglob(f"*{self._fileEnding}")).as_posix()
 
     def _prepareInferenceDir(self, volumeNode) -> bool:
         self._tmpDir.remove()
@@ -233,9 +233,13 @@ class SegmentationLogic:
 
         # Name of the volume should match expected nnUNet conventions
         self.progressInfo(f"Transferring volume to nnUNet in {self._tmpDir.path()}\n")
-        volumePath = self.nnUNetInDir.joinpath("volume_0000.nii.gz")
+        volumePath = self.nnUNetInDir.joinpath(f"volume_0000{self._fileEnding}")
         slicer.util.exportNode(volumeNode, volumePath)
         return volumePath.exists()
+
+    @property
+    def _fileEnding(self):
+        return self._nnUNetParam.readFileEndingFromDatasetFile() if self._nnUNetParam else ".nii.gz"
 
     @property
     def nnUNetOutDir(self):

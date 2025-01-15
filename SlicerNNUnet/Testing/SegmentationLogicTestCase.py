@@ -45,7 +45,7 @@ class SegmentationLogicTestCase(NNUNetTestCase):
         dataset_folder.mkdir(parents=True, exist_ok=True)
         return dataset_folder
 
-    def create_dataset_file(self):
+    def create_dataset_file(self, file_ending=None):
         dataset_dict = {
             "channel_names": {
                 "0": "channel name"
@@ -59,7 +59,7 @@ class SegmentationLogicTestCase(NNUNetTestCase):
                 "Test Label 5": 5,
             },
             "numTraining": 42,
-            "file_ending": ".nii.gz"
+            "file_ending": file_ending or ".nii.gz"
         }
 
         dataset_path = self.get_tmp_dataset_folder() / "dataset.json"
@@ -69,7 +69,7 @@ class SegmentationLogicTestCase(NNUNetTestCase):
 
         return dataset_path
 
-    def create_fake_segmentation(self):
+    def create_fake_segmentation(self, file_ending=None):
         import numpy as np
         shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
         volumeId = shNode.GetItemByDataNode(self.volume)
@@ -78,7 +78,9 @@ class SegmentationLogicTestCase(NNUNetTestCase):
         array = slicer.util.arrayFromVolume(clonedVolume)
         array = np.random.randint(0, 6, array.shape, dtype=np.int32)
         slicer.util.updateVolumeFromArray(clonedVolume, array)
-        slicer.util.exportNode(clonedVolume, self.logic.nnUNetOutDir.joinpath("out.nii.gz"))
+
+        file_ending = file_ending or ".nii.gz"
+        slicer.util.exportNode(clonedVolume, self.logic.nnUNetOutDir.joinpath(f"out{file_ending}"))
         slicer.mrmlScene.RemoveNode(clonedVolume)
 
     def create_folds_folders(self, folds=(0, 1, 2, 3, 4), chkpt_name="checkpoint_final.pth"):
@@ -89,8 +91,8 @@ class SegmentationLogicTestCase(NNUNetTestCase):
             with open(chkpt_file, "w"):
                 pass
 
-    def create_fake_model_dir(self):
-        self.create_dataset_file()
+    def create_fake_model_dir(self, file_ending=None):
+        self.create_dataset_file(file_ending)
         self.create_folds_folders()
 
     def test_setups_temporary_volume_for_nn_unet_runner(self):
@@ -108,6 +110,14 @@ class SegmentationLogicTestCase(NNUNetTestCase):
 
         self.process.finished()
         mockInferenceFinished.assert_called_once()
+
+    def test_exported_volume_file_ending_changes_depending_on_dataset_file(self):
+        self.create_fake_model_dir(file_ending=".nrrd")
+        self.logic.inferenceFinished.connect(MagicMock())
+        self.logic.startSegmentation(self.volume)
+        self.assertTrue(self.logic.nnUNetInDir.exists())
+        self.assertEqual(len(list(self.logic.nnUNetInDir.rglob("*.nrrd"))), 1)
+        self.process.finished()
 
     def test_segmentation_forwards_process_information(self):
         self.process.readInfo("READ")
@@ -158,6 +168,13 @@ class SegmentationLogicTestCase(NNUNetTestCase):
         segmentation = segmentations[0].GetSegmentation()
         s4 = segmentation.GetNthSegmentID(4)
         self.assertIn("Test Label", segmentation.GetSegment(s4).GetName())
+
+    def test_loads_segmentations_based_on_dataset_file_ending(self):
+        self.create_fake_model_dir(file_ending=".nrrd")
+        self.logic.startSegmentation(self.volume)
+        self.create_fake_segmentation(file_ending=".nrrd")
+        self.logic.loadSegmentation()
+        self.assertEqual(self.mockError.call_count, 0)
 
     def test_parameters_can_be_stored_to_and_from_settings(self):
         param = Parameter(

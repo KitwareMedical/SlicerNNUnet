@@ -185,6 +185,15 @@ class Parameter:
             labels = dataset_dict.get("labels")
             return [(f"Segment_{v}", k) for k, v in labels.items()]
 
+    def readFileEndingFromDatasetFile(self) -> str:
+        default = ".nii.gz"
+        if not self._isDatasetPathValid():
+            return default
+
+        with open(self._datasetFilePath, "r") as f:
+            dataset_dict = json.loads(f.read())
+            return dataset_dict.get("file_ending", default)
+
     @property
     def _datasetFilePath(self) -> Optional[Path]:
         path = self._getFirstFolderWithDatasetFile(self.modelPath)
