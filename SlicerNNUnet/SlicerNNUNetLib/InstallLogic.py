@@ -1,6 +1,7 @@
 import importlib.metadata
 import importlib.util
 import logging
+import sys
 from importlib.metadata import version, PackageNotFoundError
 from subprocess import CalledProcessError
 from typing import Optional, Union, Protocol
@@ -82,8 +83,11 @@ class InstallLogic:
             self._log(f"Start nnUNet install with requirements : {nnUNetRequirements}")
             torchRequirement = self._installNNUnet(nnUNetRequirements)
             self._installPyTorch(torchRequirement)
-            self._installACVLUtils()  # Since acvl_utils requires pytorch, we need to install acvl_utils after pytorch.
-            self._downgradeDynamicNetworkArchitecture()
+
+            if sys.version_info < (3, 12):
+                # Python 3.9 (Slicer-5.8 and earlier) requires several workarounds
+                self._installACVLUtils()  # Since acvl_utils requires pytorch, we need to install acvl_utils after pytorch.
+                self._downgradeDynamicNetworkArchitecture()
             self._log("nnUNet installation completed successfully.")
             return True
         except Exception as e:
@@ -144,14 +148,16 @@ class InstallLogic:
         Slicer's SimpleITK uses a special IO class, which should not be replaced.
         Torch requires special install using SlicerPyTorch.
         Requests would require restart which is unnecessary.
-        acvl-utils has problems with 0.2.1 and 0.2.2 versions. Specific install to follow.
+        On Python-3.9, acvl-utils has problems with 0.2.1 and 0.2.2 versions, therefore we install it manually separately.
         """
         nnUNetPackagesToSkip = [
             'SimpleITK',
             'torch',
             'requests',
-            'acvl-utils',
         ]
+        if sys.version_info < (3, 12):
+            # Python 3.9 (Slicer-5.8 and earlier)
+            nnUNetPackagesToSkip.append('acvl-utils')
 
         # Install nnunetv2 with selected dependencies only
         self._uninstallNNUnetIfNeeded()
