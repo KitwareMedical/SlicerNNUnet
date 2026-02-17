@@ -1,7 +1,6 @@
 import importlib.metadata
 import importlib.util
 import logging
-import sys
 from importlib.metadata import version, PackageNotFoundError
 from subprocess import CalledProcessError
 from typing import Optional, Union, Protocol
@@ -83,11 +82,6 @@ class InstallLogic:
             self._log(f"Start nnUNet install with requirements : {nnUNetRequirements}")
             torchRequirement = self._installNNUnet(nnUNetRequirements)
             self._installPyTorch(torchRequirement)
-
-            if sys.version_info < (3, 12):
-                # Python 3.9 (Slicer-5.8 and earlier) requires several workarounds
-                self._installACVLUtils()  # Since acvl_utils requires pytorch, we need to install acvl_utils after pytorch.
-                self._downgradeDynamicNetworkArchitecture()
             self._log("nnUNet installation completed successfully.")
             return True
         except Exception as e:
@@ -148,16 +142,12 @@ class InstallLogic:
         Slicer's SimpleITK uses a special IO class, which should not be replaced.
         Torch requires special install using SlicerPyTorch.
         Requests would require restart which is unnecessary.
-        On Python-3.9, acvl-utils has problems with 0.2.1 and 0.2.2 versions, therefore we install it manually separately.
         """
         nnUNetPackagesToSkip = [
             'SimpleITK',
             'torch',
             'requests',
         ]
-        if sys.version_info < (3, 12):
-            # Python 3.9 (Slicer-5.8 and earlier)
-            nnUNetPackagesToSkip.append('acvl-utils')
 
         # Install nnunetv2 with selected dependencies only
         self._uninstallNNUnetIfNeeded()
@@ -169,37 +159,6 @@ class InstallLogic:
         if not self.isPackageInstalled(Requirement("nnunetv2")):
             return
         self.pip_uninstall("nnunetv2")
-
-    def _downgradeDynamicNetworkArchitecture(self) -> None:
-        """
-        Workaround: fix incompatibility of dynamic_network_architectures==0.4 with totalsegmentator==2.0.5.
-        Revert to the last working version: dynamic_network_architectures==0.2
-        """
-        if parse(version("dynamic_network_architectures")) == parse("0.4"):
-            self._log(
-                f'dynamic_network_architectures package version is incompatible. Installing working version...')
-            self.pip_install("dynamic_network_architectures==0.2.0")
-
-    def _installACVLUtils(self) -> None:
-        """
-        Workaround: fix incompatibility of acvl-utils 0.2.1 and 0.2.2 with nnunetv2.
-        Revert to the last working version: acvl-utils==0.2.0
-        """
-        # Recent versions of acvl_utils are broken:
-        # 0.2.1: https://github.com/MIC-DKFZ/acvl_utils/issues/2
-        # 0.2.2: https://github.com/MIC-DKFZ/acvl_utils/issues/4
-        # As a workaround, we install an older version manually. This workaround can be removed after acvl_utils is fixed.
-        needToInstallAcvlUtils = True
-        try:
-            if parse(importlib.metadata.version("acvl_utils")) == parse("0.2"):
-                # A suitable version is already installed
-                needToInstallAcvlUtils = False
-        except Exception as e:
-            pass
-        if needToInstallAcvlUtils:
-            self._log(
-                f'Installing a working acvl-utils package version...')
-            slicer.util.pip_install("acvl_utils==0.2")
 
     def _installPyTorch(self, torchRequirements: str) -> None:
         torchLogic = self._getTorchLogic()
