@@ -1,5 +1,8 @@
+import importlib.metadata
+
 import pytest
 import slicer
+from packaging.requirements import Requirement
 
 from SlicerNNUNetLib import Widget
 from SlicerNNUNetLib.Parameter import Parameter
@@ -20,10 +23,14 @@ class IntegrationTestCase(NNUNetTestCase):
 
         # Install if needed and assert install was completed successfully
         widget.ui.installButton.click()
-        self.assertTrue(widget.installLogic.isPackageInstalledAndCompatible("nnunetv2"))
+        self.assertTrue(slicer.util.pip_check(Requirement("nnunetv2")))
 
         # Check nnUNetV2 doesn't have torch as listed requirement
-        with open(widget.installLogic.packageMetaFilePath("nnunetv2"), "r") as f:
+        meta_path = next(
+            p.locate() for p in importlib.metadata.files("nnunetv2")
+            if p.name == "METADATA"
+        )
+        with open(meta_path, "r") as f:
             self.assertFalse("Requires-Dist: torch" in f.read())
 
         # Set volume to segment and run segmentation

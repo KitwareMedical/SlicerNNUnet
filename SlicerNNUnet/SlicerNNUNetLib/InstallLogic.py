@@ -1,16 +1,9 @@
-import importlib.metadata
-import importlib.util
 import logging
-from importlib.metadata import version, PackageNotFoundError
-from subprocess import CalledProcessError
-from typing import Optional, Union, Protocol
+from typing import Optional, Protocol
 
-import qt
 import slicer
 from packaging.requirements import Requirement
-from packaging.version import parse, Version
-
-from .Signal import Signal
+from packaging.version import Version
 
 
 class InstallLogicProtocol(Protocol):
@@ -18,7 +11,6 @@ class InstallLogicProtocol(Protocol):
     Interface definition for the InstallLogic.
     Only the methods defined in this interface are stable.
     """
-    progressInfo: Signal
     needsRestart: bool
 
     def setupPythonRequirements(self, nnUNetRequirements: str) -> None:
@@ -34,12 +26,8 @@ class InstallLogic:
     Makes sure that SimpleITK and requests packages are not overwritten during install.
     Makes sure that torch is installed separately by PyTorch module.
 
-    Copied and adapted from :
-    https://github.com/lassoan/SlicerTotalSegmentator/blob/main/TotalSegmentator/TotalSegmentator.py
-
     Usage example :
     >>> logic = InstallLogic()
-    >>> logic.progressInfo.connect(print)
     >>> logic.getInstalledNNUnetVersion()
     None
     >>> logic.setupPythonRequirements()
@@ -48,13 +36,12 @@ class InstallLogic:
     """
 
     def __init__(self, doAskConfirmation=True):
-        self.progressInfo = Signal("str")
         self.doAskConfirmation = doAskConfirmation
         self.needsRestart = False
 
-    def _log(self, text):
+    @staticmethod
+    def _log(text):
         logging.info(text)
-        self.progressInfo(text)
 
     def setupPythonRequirements(self, nnUNetRequirements: str = "nnunetv2") -> bool:
         """
@@ -64,7 +51,8 @@ class InstallLogic:
         Setup may require 3D Slicer to be restarted to fully proceed.
         """
         try:
-            if self.isPackageInstalledAndCompatible(nnUNetRequirements):
+            req = Requirement(nnUNetRequirements)
+            if slicer.util.pip_check(req):
                 self._log(
                     f"nnUNet is already installed ({self.getInstalledNNUnetVersion()}) "
                     f"and compatible with requested version ({nnUNetRequirements})."
@@ -77,7 +65,13 @@ class InstallLogic:
                 return True
 
             if self.doAskConfirmation:
-                self._requestPermissionToInstallOrRaise()
+                if not slicer.util.confirmOkCancelDisplay(
+                    "nnUNet will be installed to 3D Slicer. "
+                    "This install can take a few minutes. "
+                    "Would you like to proceed?",
+                    "nnUNet about to be installed",
+                ):
+                    raise RuntimeError("Install process was manually canceled by user.")
 
             self._log(f"Start nnUNet install with requirements : {nnUNetRequirements}")
             torchRequirement = self._installNNUnet(nnUNetRequirements)
@@ -89,51 +83,12 @@ class InstallLogic:
             return False
 
     def getInstalledNNUnetVersion(self) -> Optional[Version]:
-        return self.getInstalledPackageVersion("nnunetv2")
-
-    @classmethod
-    def isPackageInstalledAndCompatible(cls, req: Union[str, Requirement]) -> bool:
-        return cls.isPackageInstalled(req) and cls.isInstalledPackageCompatible(req)
-
-    @classmethod
-    def isPackageInstalled(cls, req: Union[str, Requirement]) -> bool:
-        return cls.getInstalledPackageVersion(req) is not None
-
-    @classmethod
-    def isInstalledPackageCompatible(cls, req: Union[str, Requirement]) -> bool:
-        """
-        Checks if the requirement is installed in this environment and if the installed version is compatible with req.
-        """
-        req = cls.asRequirement(req)
-        installedVersion = cls.getInstalledPackageVersion(req)
-        return installedVersion in req.specifier if installedVersion is not None else True
-
-    @classmethod
-    def needsToInstallRequirement(cls, req: Union[str, Requirement]):
-        """
-        Check if the input requirement matches the current environment. Otherwise, return False.
-        """
-        req = cls.asRequirement(req)
-        if req.marker is not None and not req.marker.evaluate():
-            return False
-
-        # Check if the package is installed and compatible with requirement.
-        return not cls.isPackageInstalled(req) or not cls.isInstalledPackageCompatible(req)
-
-    @classmethod
-    def getInstalledPackageVersion(cls, req: Union[str, Requirement]) -> Optional[Version]:
-        req = cls.asRequirement(req)
+        from importlib.metadata import version, PackageNotFoundError
+        from packaging.version import parse
         try:
-            return parse(version(req.name))
+            return parse(version("nnunetv2"))
         except PackageNotFoundError:
             return None
-
-    @classmethod
-    def asRequirement(cls, req: Union[str, Requirement]) -> Requirement:
-        """
-        Converts input string to Requirement instance.
-        """
-        return req if isinstance(req, Requirement) else Requirement(req)
 
     def _installNNUnet(self, nnunetRequirement: str) -> str:
         """
@@ -143,54 +98,31 @@ class InstallLogic:
         Torch requires special install using SlicerPyTorch.
         Requests would require restart which is unnecessary.
         """
-        nnUNetPackagesToSkip = [
-            'SimpleITK',
-            'torch',
-            'requests',
-        ]
+        if slicer.util.pip_check(Requirement("nnunetv2")):
+            slicer.util.pip_uninstall("nnunetv2")
 
-        # Install nnunetv2 with selected dependencies only
-        self._uninstallNNUnetIfNeeded()
-        skipped = self.pipInstallSelective('nnunetv2', nnunetRequirement, nnUNetPackagesToSkip)
-        torchRequirement = next(req for req in skipped if "torch" in req.lower())
-        return torchRequirement
+        skipped = slicer.util.pip_install(
+            nnunetRequirement,
+            skip_packages=["SimpleITK", "torch", "requests"],
+        )
 
-    def _uninstallNNUnetIfNeeded(self):
-        if not self.isPackageInstalled(Requirement("nnunetv2")):
-            return
-        self.pip_uninstall("nnunetv2")
+        return next(req for req in skipped if "torch" in req.lower())
 
     def _installPyTorch(self, torchRequirements: str) -> None:
         torchLogic = self._getTorchLogic()
-        torchRequirements = Requirement(torchRequirements)
+        torchReq = Requirement(torchRequirements)
 
-        if self.isPackageInstalled(torchRequirements) and self.isInstalledPackageCompatible(torchRequirements):
+        if slicer.util.pip_check(torchReq):
             return
 
         self._log("PyTorch Python package is required. Installing... (it may take several minutes)")
         if torchLogic.installTorch(
                 askConfirmation=False,
-                torchVersionRequirement=str(torchRequirements.specifier)
+                torchVersionRequirement=str(torchReq.specifier)
         ) is None:
             raise RuntimeError(
                 "Failed to correctly install PyTorch. PyTorch extension needs to be installed to use this module."
             )
-
-    @classmethod
-    def _requestPermissionToInstallOrRaise(cls) -> None:
-        """
-        Request user permission to install nnUNet and PyTorch.
-        """
-        ret = qt.QMessageBox.question(
-            None,
-            "nnUNet about to be installed",
-            "nnUNet will be installed to 3D Slicer. "
-            "This install can take a few minutes. "
-            "Would you like to proceed?"
-        )
-
-        if ret == qt.QMessageBox.No:
-            raise RuntimeError("Install process was manually canceled by user.")
 
     def installPyTorchExtensionAndRestartIfNeeded(self):
         """
@@ -202,6 +134,7 @@ class InstallLogic:
             if not self.doAskConfirmation:
                 raise
 
+            import qt
             ret = qt.QMessageBox.question(
                 None,
                 "Pytorch extension not found.",
@@ -243,101 +176,3 @@ class InstallLogic:
                 "This module requires PyTorch extension. "
                 "Install it from the Extensions Manager and restart Slicer to continue."
             )
-
-    def pipInstallSelective(self, packageToInstall, installCommand, packagesToSkip):
-        """
-        Installs a Python package, skipping a list of packages.
-        Return the list of skipped requirements (package name with version requirement).
-        """
-        installCommand = self.cleanPyPiRequirement(installCommand)
-        self.pip_install(f"{installCommand} --no-deps")
-
-        # Install all dependencies but the ones listed in packagesToSkip
-        requirements = importlib.metadata.requires(packageToInstall)
-        if not requirements:
-            return []
-
-        # Update meta file to remove packages to skip.
-        # Necessary to avoid having skipped dependencies installed into 3D Slicer during pip updates.
-        self._removeSkippedPackagesFromMetaDataFile(packageToInstall, packagesToSkip)
-
-        skippedRequirements = []
-        for requirement in requirements:
-            skipThisPackage = False
-            for packageToSkip in packagesToSkip:
-                if requirement.startswith(packageToSkip):
-                    # Do not install
-                    skipThisPackage = True
-                    break
-
-            if skipThisPackage:
-                skippedRequirements.append(requirement)
-            elif self.needsToInstallRequirement(requirement):
-                # Install sub dependencies and make sure they enforce requirements not to install
-                self.pipInstallSelective(Requirement(requirement).name, requirement, packagesToSkip)
-
-        return skippedRequirements
-
-    @classmethod
-    def _removeSkippedPackagesFromMetaDataFile(cls, packageToInstall, packagesToSkip):
-        def doSkipLine(metaLine):
-            if not metaLine.startswith("Requires-Dist: "):
-                return False
-            for packageToSkip in packagesToSkip:
-                if packageToSkip in metaLine:
-                    return True
-            return False
-
-        # Use Latin-1 encoding to read the file, as it may contain non-ASCII characters and not necessarily in UTF-8 encoding.
-        with open(cls.packageMetaFilePath(packageToInstall), "r+", encoding="latin1") as file:
-            filteredLines = "".join([line for line in file if not doSkipLine(line)])
-            file.seek(0)
-            file.write(filteredLines)
-            file.truncate()
-
-    @staticmethod
-    def packageMetaFilePath(packageToInstall):
-        import importlib.metadata
-        return [p for p in importlib.metadata.files(packageToInstall) if 'METADATA' in str(p)][0].locate()
-
-    @staticmethod
-    def cleanPyPiRequirement(requirement) -> str:
-        """
-        Returns requirement string compatible with Slicer pip_install call.
-        """
-        import re
-        req = Requirement(requirement)
-
-        # Get any extra pypi to install from the requirements extras
-        extras = [extra for extra in req.extras]
-        extras = str(extras) if extras else ""
-
-        # Handle special case where extra would be in the marker instead of the extra spec
-        # Takes into account the ruff ; extra == 'dev' -> ruff[dev] case
-        extra_pattern = "extra == "
-        req_marker = str(req.marker)
-        if not extras and req_marker.startswith(extra_pattern):
-            req_marker = re.sub(r"\W+", '', req_marker.replace(extra_pattern, ""))
-            extras = f"[{req_marker}]"
-
-        return f"{req.name}{extras}{req.specifier}"
-
-    def pip_install(self, package) -> None:
-        """
-        Install and log install of input package.
-        """
-        self._log(f'- Installing {package}...')
-        try:
-            slicer.util.pip_install(package)
-        except CalledProcessError as e:
-            self._log(f"Install returned non-zero exit status : {e}. Attempting to continue...")
-
-    def pip_uninstall(self, package) -> None:
-        """
-        Uninstall and log uninstall of input package.
-        """
-        self._log(f'- Uninstall {package}...')
-        try:
-            slicer.util.pip_uninstall(package)
-        except CalledProcessError as e:
-            self._log(f"Uninstall returned non-zero exit status : {e}. Attempting to continue...")

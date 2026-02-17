@@ -28,7 +28,6 @@ class MockSegmentationLogic:
 
 class MockInstallLogic:
     def __init__(self):
-        self.progressInfo = Signal()
         self.needsRestart = False
         self.setupPythonRequirements = MagicMock(return_value=True)
         self.getInstalledNNUnetVersion = MagicMock(return_value=parse("2.2.3"))

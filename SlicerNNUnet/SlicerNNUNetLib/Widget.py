@@ -56,7 +56,6 @@ class Widget(qt.QWidget):
         self.logic.inferenceFinished.connect(self.onInferenceFinished)
         self.logic.errorOccurred.connect(self.onInferenceError)
         self.logic.progressInfo.connect(self.onProgressInfo)
-        self.installLogic.progressInfo.connect(self.onProgressInfo)
         self.isStopping = False
 
         self.sceneCloseObserver = slicer.mrmlScene.AddObserver(slicer.mrmlScene.EndCloseEvent, self.onSceneChanged)
