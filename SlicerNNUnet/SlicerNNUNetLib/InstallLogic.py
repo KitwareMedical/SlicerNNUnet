@@ -65,6 +65,10 @@ class InstallLogic:
         Setup may require 3D Slicer to be restarted to fully proceed.
         """
         try:
+            if sys.platform == "darwin":
+                # macOS with Rosetta2 requires nnunetv2 >= 2.7.0
+                nnUNetRequirements = self._withMinimumVersion(nnUNetRequirements, "2.7.0")
+
             if self.isPackageInstalledAndCompatible(nnUNetRequirements):
                 self._log(
                     f"nnUNet is already installed ({self.getInstalledNNUnetVersion()}) "
@@ -179,6 +183,14 @@ class InstallLogic:
             self._log(
                 f'dynamic_network_architectures package version is incompatible. Installing working version...')
             self.pip_install("dynamic_network_architectures==0.2.0")
+
+    @staticmethod
+    def _withMinimumVersion(requirement: str, minimumVersion: str) -> str:
+        """Returns requirement string with >=minimumVersion appended."""
+        req = Requirement(requirement)
+        specStr = str(req.specifier)
+        combined = f"{specStr},>={minimumVersion}" if specStr else f">={minimumVersion}"
+        return f"{req.name}{combined}"
 
     def _installACVLUtils(self) -> None:
         """
