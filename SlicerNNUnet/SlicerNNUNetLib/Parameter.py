@@ -37,10 +37,21 @@ class Parameter:
 
     def asArgList(self, inDir: Path, outDir: Path) -> List:
         import torch
+        import sys
 
         isValid, reason = self.isValid()
         if not isValid:
             raise RuntimeError(f"Invalid nnUNet configuration. {reason}")
+
+        npp = self.nProcessPreprocessing
+        nps = self.nProcessSegmentationExport
+
+        # Force sequential on macOS
+        if sys.platform == "darwin":
+            # nnU-net hangs on macOS at the end of inference (when saving the results)
+            # due to multiprocessing. Disable multiprocessing to prevent the hang.
+            npp = 0
+            nps = 0
 
         args = [
             "-i", inDir.as_posix(),
@@ -50,8 +61,8 @@ class Parameter:
             "-p", self._configurationNameParts[1],
             "-c", self._configurationNameParts[-1],
             "-f", *[str(f) for f in self._foldsAsList()],
-            "-npp", self.nProcessPreprocessing,
-            "-nps", self.nProcessSegmentationExport,
+            "-npp", npp,
+            "-nps", nps,
             "-step_size", self.stepSize,
             "-device", self._getDevice(),
             "-chk", self._getCheckpointName()
