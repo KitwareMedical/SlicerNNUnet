@@ -163,6 +163,11 @@ class InstallLogic:
             # Python 3.9 (Slicer-5.8 and earlier)
             nnUNetPackagesToSkip.append('acvl-utils')
 
+        if sys.platform == "darwin":
+            # Install working version of imagecodecs before nnunetv2 would attempt to install an incompatible version
+            self._installImageCodecs()
+            nnUNetPackagesToSkip.append('imagecodecs')
+
         # Install nnunetv2 with selected dependencies only
         self._uninstallNNUnetIfNeeded()
         skipped = self.pipInstallSelective('nnunetv2', nnunetRequirement, nnUNetPackagesToSkip)
@@ -212,6 +217,22 @@ class InstallLogic:
             self._log(
                 f'Installing a working acvl-utils package version...')
             slicer.util.pip_install("acvl_utils==0.2")
+
+    def _installImageCodecs(self) -> None:
+        """
+        Workaround: fix incompatibility of imagecodecs>2026.3.6 on macOS (Python wheels are only provided for ARM).
+        """
+        try:
+            importlib.metadata.version("imagecodecs")
+            return  # already installed
+        except importlib.metadata.PackageNotFoundError:
+            pass
+        self._log("Installing imagecodecs package...")
+        if sys.platform == "darwin":
+            # More recent versions do not have x86_64 wheels, therefore building from source would be attempted, which would fail
+            slicer.util.pip_install("imagecodecs<=2026.3.6")
+        else:
+            slicer.util.pip_install("imagecodecs")
 
     def _installPyTorch(self, torchRequirements: str) -> None:
         torchLogic = self._getTorchLogic()
