@@ -219,7 +219,11 @@ class Parameter:
     @staticmethod
     def _getFirstFolderWithDatasetFile(path: Path) -> Optional[Path]:
         try:
-            return next(path.rglob("dataset.json")) if path else None
+            dataset_path = (
+                    next(path.glob("dataset.json"), None)
+                    or next(path.glob("*/dataset.json"), None)
+            ) if path else None
+            return dataset_path
         except StopIteration:
             return None
 
