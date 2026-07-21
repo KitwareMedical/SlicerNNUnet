@@ -67,7 +67,7 @@ class WidgetTestCase(unittest.TestCase):
 
         self.installLogic.setupPythonRequirements.assert_called_once()
         self.segmentationLogic.setParameter.assert_called_once()
-        self.segmentationLogic.startSegmentation.assert_called_once_with(self.node)
+        self.segmentationLogic.startSegmentation.assert_called_once_with([self.node])
 
         self.assertButtonsDisabled()
         self.segmentationLogic.inferenceFinished()

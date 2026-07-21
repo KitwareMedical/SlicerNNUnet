@@ -205,6 +205,18 @@ class Parameter:
             dataset_dict = json.loads(f.read())
             return dataset_dict.get("file_ending", default)
 
+    def readChannelNamesFromFile(self) -> List[str]:
+        if not self._isDatasetPathValid():
+            return []
+        with open(self._datasetFilePath, "r") as f:
+            dataset_dict = json.loads(f.read())
+            channel_names = dataset_dict.get("channel_names", {})
+            if isinstance(channel_names, dict):
+                # Sort keys numerically when possible to keep channel order stable
+                return [channel_names[k] for k in
+                        sorted(channel_names, key=lambda x: int(x) if str(x).isdigit() else str(x))]
+            return channel_names if isinstance(channel_names, list) else []
+
     @property
     def _datasetFilePath(self) -> Optional[Path]:
         path = self._getFirstFolderWithDatasetFile(self.modelPath)

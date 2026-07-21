@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Protocol, List, Optional, Callable
+from typing import Protocol, List, Optional, Callable, Union
 
 import qt
 import slicer
@@ -25,7 +25,7 @@ class SegmentationLogicProtocol(Protocol):
 
     def startSegmentation(
             self,
-            volumeNode: "slicer.vtkMRMLScalarVolumeNode"
+            volumeNodes: Union[slicer.vtkMRMLScalarVolumeNode, list[slicer.vtkMRMLScalarVolumeNode]]
     ) -> None:
         pass
 
@@ -119,7 +119,12 @@ class SegmentationLogic:
     def setParameter(self, nnUnetConf: Parameter):
         self._nnUNetParam = nnUnetConf
 
-    def startSegmentation(self, volumeNode: "slicer.vtkMRMLScalarVolumeNode") -> None:
+    def startSegmentation(
+            self,
+            volumeNodes: Union[slicer.vtkMRMLScalarVolumeNode, list[slicer.vtkMRMLScalarVolumeNode]]
+    ) -> None:
+        if not isinstance(volumeNodes, list):
+            volumeNodes = [volumeNodes]
         """Run the segmentation on a slicer volumeNode, get the result as a segmentationNode"""
         # Check the nnUNet parameters are correct
         try:
@@ -129,7 +134,7 @@ class SegmentationLogic:
             return
 
         # Prepare the inference directory
-        if not self._prepareInferenceDir(volumeNode):
+        if not self._prepareInferenceDir(volumeNodes):
             self.errorOccurred(f"Failed to export volume node to {self.nnUNetInDir}")
             return
 
@@ -226,16 +231,23 @@ class SegmentationLogic:
     def _outFile(self) -> str:
         return next(file for file in self.nnUNetOutDir.rglob(f"*{self._fileEnding}")).as_posix()
 
-    def _prepareInferenceDir(self, volumeNode) -> bool:
+    def _prepareInferenceDir(self, volumeNodes) -> bool:
+        if not volumeNodes:
+            return False
         self._tmpDir.remove()
         self.nnUNetOutDir.mkdir(parents=True)
         self.nnUNetInDir.mkdir(parents=True)
 
         # Name of the volume should match expected nnUNet conventions
         self.progressInfo(f"Transferring volume to nnUNet in {self._tmpDir.path()}\n")
-        volumePath = self.nnUNetInDir.joinpath(f"volume_0000{self._fileEnding}")
-        slicer.util.exportNode(volumeNode, volumePath)
-        return volumePath.exists()
+        volumePaths = []
+        for idx, volumeNode in enumerate(volumeNodes):
+            volumePaths.append(
+                volumePath := self.nnUNetInDir.joinpath(f"volume_{idx:04d}{self._fileEnding}")
+            )
+            slicer.util.exportNode(volumeNode, volumePath)
+
+        return all(volumePath.exists() for volumePath in volumePaths)
 
     @property
     def _fileEnding(self):

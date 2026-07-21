@@ -13,7 +13,6 @@ from .SegmentationLogic import SegmentationLogic, SegmentationLogicProtocol
 
 @parameterNodeWrapper
 class WidgetParameterNode:
-    inputVolume: slicer.vtkMRMLScalarVolumeNode
     parameter: Parameter
 
 
@@ -35,6 +34,8 @@ class Widget(qt.QWidget):
         self.logic = segmentationLogic or SegmentationLogic()
         self.installLogic = installLogic or InstallLogic()
 
+        self.additionalInputSelectors = []
+
         # Instantiate widget UI
         layout = qt.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -43,7 +44,7 @@ class Widget(qt.QWidget):
         layout.addWidget(uiWidget)
 
         self.ui = slicer.util.childWidgetVariables(uiWidget)
-        self.ui.inputSelector.currentNodeChanged.connect(self.onInputChanged)
+        self.ui.inputSelector.currentNodeChanged.connect(self.onInputsChanged)
         self.ui.installButton.clicked.connect(self.onInstall)
 
         self.ui.applyButton.setIcon(self.icon("start_icon.png"))
@@ -78,10 +79,47 @@ class Widget(qt.QWidget):
             }
         )
 
+        self.ui.nnUNetModelPathEdit.connect("currentPathChanged(QString)", self.onModelPathChanged)
+
         # Configure UI
-        self.onInputChanged()
         self.updateInstalledVersion()
         self._setApplyVisible(True)
+
+        self.onModelPathChanged()
+
+    def onUpdateAdditionalInputSelectors(self, channels):
+        formLayout = self.ui.additionalInputsFrame.layout()
+        if len(self.additionalInputSelectors) > 0:
+            for i in reversed(range(formLayout.rowCount())):
+                formLayout.removeRow(i)
+            self.additionalInputSelectors.clear()
+
+        for idx, channel in enumerate(channels):
+            if idx == 0:
+                continue
+            inputSelector = slicer.qMRMLNodeComboBox()
+            inputSelector.nodeTypes = ["vtkMRMLScalarVolumeNode"]
+            inputSelector.noneEnabled = True
+            inputSelector.showHidden = False
+            inputSelector.renameEnabled = True
+            inputSelector.setMRMLScene(slicer.mrmlScene)
+            inputSelector.currentNodeChanged.connect(self.onInputsChanged)
+            formLayout.addRow(f"Input volume {idx + 1}: ", inputSelector)
+            self.additionalInputSelectors.append(inputSelector)
+
+    def onModelPathChanged(self):
+        nnUNetParam = self._parameterNode.parameter
+        isValid, messages = nnUNetParam.isValid()
+        self.ui.logTextEdit.clear()
+        if messages:
+            self.onLogMessage(messages)
+        self.ui.applyButton.setEnabled(False)
+
+        channels = []
+        if isValid:
+            channels = nnUNetParam.readChannelNamesFromFile()
+        self.onUpdateAdditionalInputSelectors(channels)
+        self.onInputsChanged()
 
     @staticmethod
     def _createParameterNode() -> WidgetParameterNode:
@@ -157,7 +195,7 @@ class Widget(qt.QWidget):
         self._setApplyVisible(True)
 
     def onApply(self, *_):
-        if self.getCurrentVolumeNode() is None:
+        if not self.getCurrentVolumeNodes():
             self._reportError("Please select a valid volume to proceed.")
             return
 
@@ -187,13 +225,13 @@ class Widget(qt.QWidget):
 
         self._parameterNode.parameter.toSettings()
         self.logic.setParameter(self._parameterNode.parameter)
-        self.logic.startSegmentation(self.getCurrentVolumeNode())
+        self.logic.startSegmentation(self.getCurrentVolumeNodes())
 
-    def onInputChanged(self, *_):
-        self.ui.applyButton.setEnabled(self.getCurrentVolumeNode() is not None)
+    def onInputsChanged(self, *_):
+        self.ui.applyButton.setEnabled(len(self.getCurrentVolumeNodes()) > 0)
 
-    def getCurrentVolumeNode(self):
-        return self.ui.inputSelector.currentNode()
+    def getCurrentVolumeNodes(self):
+        return [self.ui.inputSelector.currentNode()] + [s.currentNode() for s in self.additionalInputSelectors]
 
     def onInferenceFinished(self, *_):
         if self.isStopping:
@@ -203,7 +241,7 @@ class Widget(qt.QWidget):
         try:
             self.onProgressInfo("Loading inference results...")
             segmentation = self.logic.loadSegmentation()
-            segmentation.SetName(self.getCurrentVolumeNode().GetName() + "Segmentation")
+            segmentation.SetName(self.ui.inputSelector.currentNode().GetName() + "Segmentation")
             self._reportFinished("Inference ended successfully.")
         except RuntimeError as e:
             self._reportError(f"Inference ended in error:\n{e}")
