@@ -123,9 +123,12 @@ class SegmentationLogic:
             self,
             volumeNodes: Union[slicer.vtkMRMLScalarVolumeNode, list[slicer.vtkMRMLScalarVolumeNode]]
     ) -> None:
+        """ Run segmentation on a single Slicer volume node or a list of volume nodes.
+
+        If a list of volume nodes is provided, the list must be in the input order expected by the nnUNet model.
+        """
         if not isinstance(volumeNodes, list):
             volumeNodes = [volumeNodes]
-        """Run the segmentation on a slicer volumeNode, get the result as a segmentationNode"""
         # Check the nnUNet parameters are correct
         try:
             self._getNNUNetParamArgsOrRaise()
