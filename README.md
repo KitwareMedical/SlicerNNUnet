@@ -78,7 +78,8 @@ The provided model path should contain the nnUNet 'dataset.json' file.
 
 <img src="https://github.com/KitwareMedical/SlicerNNUnet/raw/main/Screenshots/4.png"/>
 
-Select the volume on which to run the model using the volume input editor.
+Select the volume on which to run the model using the volume input editor. If the selected nnUNet model expects 
+multichannel input, multiple input volume selectors will be displayed in the expected order.
 
 Then click on the `Apply` button.
 

@@ -208,6 +208,7 @@ class Parameter:
     def readChannelNamesFromFile(self) -> List[str]:
         if not self._isDatasetPathValid():
             return []
+
         with open(self._datasetFilePath, "r") as f:
             dataset_dict = json.loads(f.read())
             channel_names = dataset_dict.get("channel_names", {})

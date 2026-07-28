@@ -87,7 +87,9 @@ class Widget(qt.QWidget):
 
         self.onModelPathChanged()
 
-    def onUpdateAdditionalInputSelectors(self, channels):
+    def onUpdateAdditionalInputSelectors(self):
+        channels = self._parameterNode.parameter.readChannelNamesFromFile()
+
         formLayout = self.ui.additionalInputsFrame.layout()
         if len(self.additionalInputSelectors) > 0:
             for i in reversed(range(formLayout.rowCount())):
@@ -115,10 +117,7 @@ class Widget(qt.QWidget):
             self.onLogMessage(messages)
         self.ui.applyButton.setEnabled(False)
 
-        channels = []
-        if isValid:
-            channels = nnUNetParam.readChannelNamesFromFile()
-        self.onUpdateAdditionalInputSelectors(channels)
+        self.onUpdateAdditionalInputSelectors()
         self.onInputsChanged()
 
     @staticmethod
