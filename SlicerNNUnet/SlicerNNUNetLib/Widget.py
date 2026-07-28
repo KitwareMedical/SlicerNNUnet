@@ -115,7 +115,6 @@ class Widget(qt.QWidget):
         self.ui.logTextEdit.clear()
         if messages:
             self.onLogMessage(messages)
-        self.ui.applyButton.setEnabled(False)
 
         self.onUpdateAdditionalInputSelectors()
         self.onInputsChanged()
@@ -184,6 +183,7 @@ class Widget(qt.QWidget):
 
     def onSceneChanged(self, *_):
         self.onStopClicked()
+        self.onModelPathChanged()
 
     def onStopClicked(self):
         self.isStopping = True
@@ -227,7 +227,9 @@ class Widget(qt.QWidget):
         self.logic.startSegmentation(self.getCurrentVolumeNodes())
 
     def onInputsChanged(self, *_):
-        self.ui.applyButton.setEnabled(len(self.getCurrentVolumeNodes()) > 0)
+        nChannels = len(self._parameterNode.parameter.readChannelNamesFromFile())
+        volumeNodes = [v for v in self.getCurrentVolumeNodes() if v is not None]
+        self.ui.applyButton.setEnabled(nChannels and len(volumeNodes) == nChannels)
 
     def getCurrentVolumeNodes(self):
         return [self.ui.inputSelector.currentNode()] + [s.currentNode() for s in self.additionalInputSelectors]
