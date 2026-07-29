@@ -230,15 +230,14 @@ class Parameter:
         return None
 
     @staticmethod
-    def _getFirstFolderWithDatasetFile(path: Path) -> Optional[Path]:
-        try:
-            dataset_path = (
-                    next(path.glob("dataset.json"), None)
-                    or next(path.glob("*/dataset.json"), None)
-            ) if path else None
-            return dataset_path
-        except StopIteration:
-            return None
+    def _getFirstFolderWithDatasetFile(path: Path, searchDepth: int = 3) -> Optional[Path]:
+        pattern = "dataset.json"
+        for _ in range(searchDepth):
+            dataset_path = next(path.glob(pattern), None)
+            if dataset_path:
+                return dataset_path
+            pattern = f"*/{pattern}"
+        return None
 
     def _foldsAsList(self) -> List[int]:
         return [int(f) for f in self.folds.strip().split(",")] if self.folds else [0]
