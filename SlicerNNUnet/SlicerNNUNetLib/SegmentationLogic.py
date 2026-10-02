@@ -217,6 +217,12 @@ class SegmentationLogic:
         os.environ['nnUNet_raw'] = self._nnUNetParam.modelFolder.as_posix()
         os.environ['nnUNet_results'] = self._nnUNetParam.modelFolder.as_posix()
 
+        # Prevent nnUNet from querying hostname via subprocess in get_allowed_n_proc_DA which may lead
+        # to decode errors on non-Windows machines.
+        cpu_count = os.cpu_count() or 1
+        os.environ['nnUNet_n_proc_DA'] = str(min(12, cpu_count))
+        os.environ['nnUNet_def_n_proc'] = str(min(8, cpu_count))
+
         argListStr = ' '.join(str(a) for a in args)
         self.progressInfo(
             "Starting nnUNet with the following parameters:\n"
