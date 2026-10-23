@@ -316,6 +316,7 @@ class Process:
 
     @staticmethod
     def _report(stream: "qt.QByteArray", outSignal: Callable[[str], None]) -> None:
-        info = qt.QTextCodec.codecForUtfText(stream).toUnicode(stream)
+        # QTextCodec is not available in Qt6. Invalid UTF-8 bytes are replaced instead of raising an error.
+        info = bytes(stream.data()).decode("utf-8", errors="replace")
         if info:
             outSignal(info)
