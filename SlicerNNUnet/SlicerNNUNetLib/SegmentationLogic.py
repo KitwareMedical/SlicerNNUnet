@@ -184,9 +184,12 @@ class SegmentationLogic:
     def _findUNetPredictPath(cls):
         # nnUNet install dir depends on OS. For Windows, install will be done in the Scripts dir.
         # For Linux and MacOS, install will be done in the bin folder.
-        nnUNetPaths = ["Scripts", "bin"]
-        for path in nnUNetPaths:
-            predict_paths = list(sorted(cls._nnUNetPythonDir().joinpath(path).glob("nnUNetv2_predict*")))
+        # The scripts dir reported by sysconfig is checked first, as it is also correct in a Slicer build tree.
+        import sysconfig
+        scriptDirs = [Path(sysconfig.get_path("scripts"))]
+        scriptDirs += [cls._nnUNetPythonDir().joinpath(path) for path in ["Scripts", "bin"]]
+        for scriptDir in scriptDirs:
+            predict_paths = list(sorted(scriptDir.glob("nnUNetv2_predict*")))
             if predict_paths:
                 return predict_paths[0].resolve()
 
