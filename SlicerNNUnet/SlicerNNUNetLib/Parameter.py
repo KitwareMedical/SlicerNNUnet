@@ -1,10 +1,44 @@
 import json
 from dataclasses import dataclass, asdict
+from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, List, Tuple, Optional, Dict
 
 import qt
 from slicer.parameterNodeWrapper import parameterPack, Choice, WithinRange
+
+
+@lru_cache(maxsize=None)
+def _isNvidiaDriverInstalled() -> bool:
+    """
+    Checks whether the NVIDIA driver, which is required for CUDA, is installed by loading its library.
+    Does not require PyTorch.
+    """
+    import ctypes
+    import sys
+    libraryNames = ["nvcuda.dll"] if sys.platform == "win32" else ["libcuda.so.1", "libcuda.so"]
+    for libraryName in libraryNames:
+        try:
+            ctypes.CDLL(libraryName)
+            return True
+        except OSError:
+            continue
+    return False
+
+
+def availableDevices() -> List[str]:
+    """
+    Inference devices that can be used on this platform, the preferred one first.
+    Determined without PyTorch, as it may not be installed yet when this is called:
+    CUDA is not available on macOS, and MPS (Apple GPU) is only available on Apple Silicon.
+    On other platforms CUDA is preferred if the NVIDIA driver is installed. CUDA is offered
+    even if the driver is not detected, so that it can still be selected manually.
+    """
+    import platform
+    import sys
+    if sys.platform == "darwin":
+        return ["mps", "cpu"] if platform.machine() == "arm64" else ["cpu"]
+    return ["cuda", "cpu"] if _isNvidiaDriverInstalled() else ["cpu", "cuda"]
 
 
 @parameterPack
@@ -18,7 +52,7 @@ class Parameter:
     Provides method to convert to nnUNet process arg list.
     """
     folds: str = ""
-    device: Annotated[str, Choice(["cuda", "cpu", "mps"])] = "cuda"
+    device: Annotated[str, Choice(availableDevices())] = availableDevices()[0]
     stepSize: Annotated[float, WithinRange(0., 1.0)] = 0.5
     disableTta: bool = True
     nProcessPreprocessing: Annotated[int, WithinRange(1, 999)] = 1
@@ -115,7 +149,8 @@ class Parameter:
         for k, v in val_dict.items():
             try:
                 instance.setValue(k, v)
-            except TypeError:
+            except (TypeError, ValueError):
+                # ValueError: value is not valid anymore, for example a saved device that is not available on this platform
                 continue
         return instance
 
