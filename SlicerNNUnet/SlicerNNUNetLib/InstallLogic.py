@@ -1,6 +1,7 @@
 import importlib.metadata
 import importlib.util
 import logging
+import platform
 import sys
 from importlib.metadata import version, PackageNotFoundError
 from subprocess import CalledProcessError
@@ -228,7 +229,7 @@ class InstallLogic:
         except importlib.metadata.PackageNotFoundError:
             pass
         self._log("Installing imagecodecs package...")
-        if sys.platform == "darwin":
+        if sys.platform == "darwin" and platform.machine() == "x86_64":
             # More recent versions do not have x86_64 wheels, therefore building from source would be attempted, which would fail
             slicer.util.pip_install("imagecodecs<=2026.3.6")
         else:
