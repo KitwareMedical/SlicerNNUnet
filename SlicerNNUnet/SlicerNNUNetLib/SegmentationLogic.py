@@ -223,6 +223,13 @@ class SegmentationLogic:
         os.environ['nnUNet_n_proc_DA'] = str(min(12, cpu_count))
         os.environ['nnUNet_def_n_proc'] = str(min(8, cpu_count))
 
+        device = self._nnUNetParam._getDevice()
+        if device != self._nnUNetParam.device:
+            self.progressInfo(f"Selected device '{self._nnUNetParam.device}' is not available, using '{device}' instead.\n")
+        if device == "mps":
+            # Operators not supported by the MPS backend (Apple GPU) fall back to CPU instead of failing
+            os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+
         argListStr = ' '.join(str(a) for a in args)
         self.progressInfo(
             "Starting nnUNet with the following parameters:\n"
